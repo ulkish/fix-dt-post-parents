@@ -55,7 +55,7 @@ function fpp_add_post_parent( $post_id ) {
 		);
 	}
 }
-// add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
 
 /**
  * Looks through all distributed posts for missing post parents.
