@@ -27,7 +27,6 @@
  * @package Fix Distributor Post Parents
  */
 
-add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
 /**
  * Adds the corresponding post parent to a distributed post
  * right after being distributed.
@@ -56,3 +55,51 @@ function fpp_add_post_parent( $post_id ) {
 		);
 	}
 }
+add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+
+/**
+ * Looks through all distributed posts for missing post parents.
+ * Then switches to their original site for a post reference, finally
+ * it will search for that distributed post in our current site, grab
+ * the correct ID and attach it as a post parent.
+ *
+ * @return void
+ */
+function fpp_fix_post_parents() {
+	// 1. Get distributed posts with no post parents.
+
+	// Search through site for distributed posts.
+	$args = array(
+		'meta_key'       => 'dt_original_blog_id',
+		'post_type'      => 'any',
+		'posts_per_page' => -1,
+	);
+
+	$posts_query       = new WP_Query( $args );
+	$distributed_posts = $posts_query->posts;
+
+	// Getting the original blog ID and post ID from every distributed post.
+	$og_blog_and_post_ids = array();
+	foreach ( $distributed_posts as $post ) {
+		// If a post without parent is found.
+		if ( 0 === wp_get_post_parent_id( $post->ID ) ) {
+			$original_post_id = get_post_meta( $post->ID, 'dt_original_post_id' )[0];
+			$original_blog_id = get_post_meta( $post->ID, 'dt_original_blog_id' )[0];
+
+			if ( ! isset( $og_blog_and_post_ids[ $original_blog_id ] ) ) {
+				$og_blog_and_post_ids[ $original_blog_id ] = array();
+			}
+
+			array_push(
+				$og_blog_and_post_ids[ $original_blog_id ],
+				array(
+					'og_post_id' => $original_post_id,
+					'post_id'    => $post->ID,
+				)
+			);
+
+		}
+	}
+	print_r( $og_blog_and_post_ids );
+}
+// add_action( 'init', 'fpp_fix_post_parents' );
