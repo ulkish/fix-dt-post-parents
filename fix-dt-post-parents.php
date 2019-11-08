@@ -27,4 +27,32 @@
  * @package Fix Distributor Post Parents
  */
 
+add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+/**
+ * Adds the corresponding post parent to a distributed post
+ * right after being distributed.
+ *
+ * @param int $post_id Post ID of the newly created post.
+ * @return void
+ */
+function fpp_add_post_parent( $post_id ) {
+	$post_parent = get_post_meta( $post_id, 'dt_original_post_parent', true );
+	if ( ! empty( $post_parent ) ) {
+		$args = array(
+			'meta_key'       => 'dt_original_post_id',
+			'meta_value'     => $post_parent,
+			'post_type'      => 'any',
+			'posts_per_page' => -1,
+		);
 
+		$query            = new WP_Query( $args );
+		$distributed_post = $query->posts[0];
+
+		wp_update_post(
+			array(
+				'ID'          => $post_id,
+				'post_parent' => $distributed_post->ID,
+			)
+		);
+	}
+}
