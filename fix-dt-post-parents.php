@@ -28,7 +28,7 @@
  */
 
 
-// add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
 add_action( 'network_admin_menu', 'fpp_create_page' );
 add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
 
@@ -88,8 +88,9 @@ function fpp_fix_post_parents( $blog_id ) {
 	// Getting the original blog ID and post ID from every distributed post.
 	$og_blog_and_post_ids = array();
 	foreach ( $distributed_posts as $post ) {
-		// If a post without parent is found.
-		if ( wp_get_post_parent_id( $post->ID ) === 0 ) {
+		$unlinked = get_post_meta( $post->ID, 'dt_unlinked', true );
+		// If a post without parent is found AND is still linked to its original post.
+		if ( wp_get_post_parent_id( $post->ID ) === 0 && ( ! $unlinked ) ) {
 			// Grab their original data and add it to an array.
 			$original_post_id = get_post_meta( $post->ID, 'dt_original_post_id' )[0];
 			$original_blog_id = get_post_meta( $post->ID, 'dt_original_blog_id' )[0];
@@ -203,3 +204,4 @@ function fpp_admin_page() {
 	</div>
 	<?php
 }
+
