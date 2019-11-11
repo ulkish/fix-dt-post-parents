@@ -27,9 +27,11 @@
  * @package Fix Distributor Post Parents
  */
 
-
+// Adds fix to the Distributor plugin.
 add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+// Adds admin page to the network panel.
 add_action( 'network_admin_menu', 'fpp_create_page' );
+// Adds main function to the network page button.
 add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
 
 /**
@@ -109,12 +111,10 @@ function fpp_fix_post_parents( $blog_id ) {
 
 		}
 	}
-	// for each dt_og_post_id found in this array, add a parent.
+	// For each dt_og_post_id found in this array, add a parent.
 	$correct_post_parents = array();
-
 	foreach ( $og_blog_and_post_ids as $blog_id => $post_id ) {
 		switch_to_blog( $blog_id );
-
 		foreach ( $post_id as $post ) {
 			$post_parent_id = wp_get_post_parent_id( $post['og_post_id'] );
 
