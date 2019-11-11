@@ -27,6 +27,11 @@
  * @package Fix Distributor Post Parents
  */
 
+
+// add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+add_action( 'network_admin_menu', 'fpp_create_page' );
+add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
+
 /**
  * Adds the corresponding post parent to a distributed post
  * right after being distributed by the dt_push_post action.
@@ -55,7 +60,7 @@ function fpp_add_post_parent( $post_id ) {
 		);
 	}
 }
-add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+
 
 /**
  * Looks through all distributed posts for missing post parents.
@@ -63,9 +68,11 @@ add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
  * it will search for that distributed post in our current site, grab
  * the correct ID and attach it as a post parent.
  *
+ * @param int $blog_id Blog ID of the blog on which the fix will run.
  * @return void
  */
-function fpp_fix_post_parents() {
+function fpp_fix_post_parents( $blog_id ) {
+	switch_to_blog( $blog_id );
 	$starting_blog = get_current_blog_id();
 
 	// Search through site for distributed posts.
@@ -114,7 +121,7 @@ function fpp_fix_post_parents() {
 				array_push(
 					$correct_post_parents,
 					array(
-						'post_id'          => $post['post_id'],
+						'post_id'        => $post['post_id'],
 						'og_post_parent' => $post_parent_id,
 					)
 				);
@@ -145,4 +152,54 @@ function fpp_fix_post_parents() {
 	}
 
 }
-add_action( 'init', 'fpp_fix_post_parents' );
+
+/**
+ * Goes through every blog in the site and executes the
+ * main function of the plugin.
+ *
+ * @return void
+ */
+function fpp_fix_all_blogs() {
+	$starting_blog = get_current_blog_id();
+	$sites = get_sites();
+
+	foreach ( $sites as $site ) {
+		switch_to_blog( $site->blog_id );
+		fpp_fix_post_parents( $site->blog_id );
+	}
+	switch_to_blog( $starting_blog );
+}
+
+/**
+ * Creates an network admin page.
+ */
+function fpp_create_page() {
+		add_submenu_page(
+			'settings.php',
+			'Fix DT Post Parents',
+			'Fix DT Post Parents',
+			'manage_options',
+			'fix-dt-post-parents',
+			'fpp_admin_page'
+		);
+}
+
+/**
+ * Fills the network admin page.
+ *
+ * @return void
+ */
+function fpp_admin_page() {
+	?>
+	<div class="wrap">
+		<h2>Fix Distributor Post Parents</h2>
+		<p>This button will fix any missing post parent-child connections
+		lost in previously distributed posts/pages.
+		</p>
+		<form action="<?php echo admin_url( 'admin-post.php' ); ?>" method="post">
+			<input type="hidden" name="action" value="fpp_fix">
+			<input type="submit" class="button button-primary" value="Fix all blogs">
+		</form>
+	</div>
+	<?php
+}
