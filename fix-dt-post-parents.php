@@ -150,7 +150,11 @@ function fpp_fix_post_parents( $blog_id ) {
 			);
 		}
 	}
-
+	// Creating a notice to let user know the fix ran.
+	$notice_message = '<div class="updated notice">
+	<p>Success! Your post-parent connections have been fixed.</p>
+	</div>';
+	set_transient( 'fpp_ran', $notice_message, 5 );
 }
 
 /**
@@ -168,6 +172,7 @@ function fpp_fix_all_blogs() {
 		fpp_fix_post_parents( $site->blog_id );
 	}
 	switch_to_blog( $starting_blog );
+	wp_redirect( admin_url( '/network/settings.php?page=fix-dt-post-parents/' ) );
 }
 
 /**
@@ -190,6 +195,10 @@ function fpp_create_page() {
  * @return void
  */
 function fpp_admin_page() {
+	$notice = get_transient( 'fpp_ran' );
+	if ( $notice ) {
+		echo $notice;
+	}
 	?>
 	<div class="wrap">
 		<h2>Fix Distributor Post Parents</h2>
@@ -203,4 +212,6 @@ function fpp_admin_page() {
 	</div>
 	<?php
 }
+
+
 
