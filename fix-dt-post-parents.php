@@ -129,10 +129,9 @@ function fpp_fix_post_parents( $blog_id ) {
 			}
 		}
 	}
+	// Come back to the starting blog and set the correct post parent.
 	switch_to_blog( $starting_blog );
-
 	foreach ( $correct_post_parents as $cpp ) {
-
 		$args = array(
 			'meta_key'       => 'dt_original_post_id',
 			'meta_value'     => $cpp['og_post_parent'],
