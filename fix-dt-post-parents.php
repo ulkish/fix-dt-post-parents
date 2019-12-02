@@ -181,8 +181,8 @@ function fpp_fix_all_blogs() {
 function fpp_create_page() {
 		add_submenu_page(
 			'settings.php',
-			'Fix DT Post Parents',
-			'Fix DT Post Parents',
+			'Distributor Parents Fixer',
+			'Distributor Parents Fixer',
 			'manage_options',
 			'fix-dt-post-parents',
 			'fpp_admin_page'
