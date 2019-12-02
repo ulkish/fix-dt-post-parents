@@ -42,16 +42,29 @@ add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
  * @return void
  */
 function fpp_add_post_parent( $post_id ) {
-	$post_parent = get_post_meta( $post_id, 'dt_original_post_parent', true );
+	$post_parent      = get_post_meta( $post_id, 'dt_original_post_parent', true );
+	$original_blog_id = get_post_meta( $post_id, 'dt_original_blog_id', true );
 	if ( ! empty( $post_parent ) ) {
 		$args = array(
-			'meta_key'       => 'dt_original_post_id',
-			'meta_value'     => $post_parent,
 			'post_type'      => 'any',
 			'posts_per_page' => -1,
+			'meta_query'     => array(
+				array(
+					'key'     => 'dt_original_post_id',
+					'value'   => $post_parent,
+					'compare' => '=',
+				),
+				array(
+					'key'     => 'dt_original_blog_id',
+					'value'   => $original_blog_id,
+					'compare' => '=',
+				),
+			),
 		);
 
 		$query = new WP_Query( $args );
+
+		set_transient( 'query_for_post', $query, 600 );
 		if ( $query->have_posts() ) {
 			$distributed_post = $query->posts[0];
 
