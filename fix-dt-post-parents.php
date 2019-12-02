@@ -51,8 +51,7 @@ function fpp_add_post_parent( $post_id ) {
 			'posts_per_page' => -1,
 		);
 
-		$query            = new WP_Query( $args );
-
+		$query = new WP_Query( $args );
 		if ( $query->have_posts() ) {
 			$distributed_post = $query->posts[0];
 
@@ -174,7 +173,6 @@ function fpp_fix_all_blogs() {
 	$sites         = get_sites();
 
 	foreach ( $sites as $site ) {
-		switch_to_blog( $site->blog_id );
 		fpp_fix_post_parents( $site->blog_id );
 	}
 	switch_to_blog( $starting_blog );
@@ -183,6 +181,8 @@ function fpp_fix_all_blogs() {
 
 /**
  * Creates a network admin page.
+ *
+ * @return void
  */
 function fpp_create_page() {
 		add_submenu_page(
