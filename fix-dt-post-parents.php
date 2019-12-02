@@ -88,35 +88,35 @@ function fpp_fix_post_parents( $blog_id ) {
 	$distributed_posts = $posts_query->posts;
 
 	// Getting the original blog ID and post ID from every distributed post.
-	$og_blog_and_post_ids = array();
+	$original_blog_and_post_ids = array();
 	foreach ( $distributed_posts as $post ) {
 		$unlinked = get_post_meta( $post->ID, 'dt_unlinked', true );
 		// If a post without parent is found AND is still linked to its original post.
-		if ( wp_get_post_parent_id( $post->ID ) === 0 && ( ! $unlinked ) ) {
+		if ( ( wp_get_post_parent_id( $post->ID ) === 0 ) && ( ! $unlinked ) ) {
 			// Grab their original data and add it to an array.
 			$original_post_id = get_post_meta( $post->ID, 'dt_original_post_id' )[0];
 			$original_blog_id = get_post_meta( $post->ID, 'dt_original_blog_id' )[0];
 
-			if ( ! isset( $og_blog_and_post_ids[ $original_blog_id ] ) ) {
-				$og_blog_and_post_ids[ $original_blog_id ] = array();
+			if ( ! isset( $original_blog_and_post_ids[ $original_blog_id ] ) ) {
+				$original_blog_and_post_ids[ $original_blog_id ] = array();
 			}
 
 			array_push(
-				$og_blog_and_post_ids[ $original_blog_id ],
+				$original_blog_and_post_ids[ $original_blog_id ],
 				array(
-					'og_post_id' => $original_post_id,
-					'post_id'    => $post->ID,
+					'original_post_id' => $original_post_id,
+					'post_id'          => $post->ID,
 				)
 			);
 
 		}
 	}
-	// For each dt_og_post_id found in this array, add a parent.
+	// For each dt_original_post_id found in this array, add a parent.
 	$correct_post_parents = array();
-	foreach ( $og_blog_and_post_ids as $blog_id => $post_id ) {
+	foreach ( $original_blog_and_post_ids as $blog_id => $post_id ) {
 		switch_to_blog( $blog_id );
 		foreach ( $post_id as $post ) {
-			$post_parent_id = wp_get_post_parent_id( $post['og_post_id'] );
+			$post_parent_id = wp_get_post_parent_id( $post['original_post_id'] );
 
 			if ( 0 !== $post_parent_id ) {
 				array_push(
@@ -131,10 +131,10 @@ function fpp_fix_post_parents( $blog_id ) {
 	}
 	// Come back to the starting blog and set the correct post parent.
 	switch_to_blog( $starting_blog );
-	foreach ( $correct_post_parents as $cpp ) {
+	foreach ( $correct_post_parents as $correct_post_parent ) {
 		$args = array(
 			'meta_key'       => 'dt_original_post_id',
-			'meta_value'     => $cpp['og_post_parent'],
+			'meta_value'     => $correct_post_parent['original_post_parent'],
 			'post_type'      => 'any',
 			'posts_per_page' => -1,
 		);
@@ -144,13 +144,13 @@ function fpp_fix_post_parents( $blog_id ) {
 		foreach ( $distributed_posts as $post ) {
 			wp_update_post(
 				array(
-					'ID'          => $cpp['post_id'],
+					'ID'          => $correct_post_parent['post_id'],
 					'post_parent' => $post->ID,
 				)
 			);
 		}
 	}
-	// Creating a notice to let user know the fix ran.
+	// Creating a notice to let the user know the fix ran.
 	$notice_message = '<div class="updated notice">
 	<p>Success! Your post-parent connections have been fixed.</p>
 	</div>';
@@ -176,7 +176,7 @@ function fpp_fix_all_blogs() {
 }
 
 /**
- * Creates an network admin page.
+ * Creates a network admin page.
  */
 function fpp_create_page() {
 		add_submenu_page(
