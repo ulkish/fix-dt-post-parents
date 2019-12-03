@@ -44,34 +44,28 @@ add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
 function fpp_add_post_parent( $post_id ) {
 	$post_parent      = get_post_meta( $post_id, 'dt_original_post_parent', true );
 	$original_blog_id = get_post_meta( $post_id, 'dt_original_blog_id', true );
-	if ( ! empty( $post_parent ) ) {
-		$args = array(
-			'post_type'      => 'any',
-			'posts_per_page' => -1,
-			'meta_query'     => array(
-				array(
-					'key'     => 'dt_original_post_id',
-					'value'   => $post_parent,
-					'compare' => '=',
-				),
-				array(
-					'key'     => 'dt_original_blog_id',
-					'value'   => $original_blog_id,
-					'compare' => '=',
-				),
-			),
-		);
+	$fixed            = get_post_meta( $post_id, 'dt_parent_fixed', true );
 
-		$query = new WP_Query( $args );
-		if ( $query->have_posts() ) {
-			$distributed_post = $query->posts[0];
-
+	if ( ! empty( $post_parent ) && empty( $fixed ) ) {
+		$starting_blog_id = get_current_blog_id();
+		// Switch to the original blog.
+		switch_to_blog( $original_blog_id );
+		// Get the post parent slug.
+		$post = get_post( $post_parent );
+		$slug = $post->post_name;
+		// Switch back to destination blog.
+		switch_to_blog( $starting_blog_id );
+		// Look for a post with that slug.
+		$true_post_parent = get_page_by_path( $slug, OBJECT, 'page' )->ID;
+		// If a post with that slug exists on this blog, continue.
+		if ( ! empty( $true_post_parent ) ) {
 			wp_update_post(
 				array(
 					'ID'          => $post_id,
-					'post_parent' => $distributed_post->ID,
+					'post_parent' => $true_post_parent,
 				)
 			);
+			update_post_meta( $post_id, 'dt_parent_fixed', 1 );
 		}
 	}
 }
