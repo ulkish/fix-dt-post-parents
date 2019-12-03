@@ -63,8 +63,6 @@ function fpp_add_post_parent( $post_id ) {
 		);
 
 		$query = new WP_Query( $args );
-
-		set_transient( 'query_for_post', $query, 600 );
 		if ( $query->have_posts() ) {
 			$distributed_post = $query->posts[0];
 
