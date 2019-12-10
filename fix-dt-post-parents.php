@@ -28,7 +28,9 @@
  */
 
 // Adds fix to the Distributor plugin.
-add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 1 );
+add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 3 );
+// TEST: Trying to get original post meta data.
+add_action( 'dt_push_post_args', 'fpp_store_parent', 10, 2 );
 // Adds admin page to the network panel.
 add_action( 'network_admin_menu', 'fpp_create_page' );
 // Adds main function to the network page button.
@@ -42,40 +44,39 @@ add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
  * @return void
  */
 function fpp_add_post_parent( $post_id ) {
-	$post_parent      = get_post_meta( $post_id, 'dt_original_post_parent', true );
+
 	$original_blog_id = get_post_meta( $post_id, 'dt_original_blog_id', true );
 	$fixed            = get_post_meta( $post_id, 'dt_parent_fixed', true );
-	$post_parent_old  = wp_get_post_parent_id( $post_id );
+	$post_parent      = get_transient( 'temp_original_parent' );
 
-	// If this post has a post parent (either old or new).
-	if ( ! empty( $post_parent ) || 0 !== $post_parent_old ) {
-		// If this post hasn't been fixed before.
-		if ( empty( $fixed ) ) {
-			$starting_blog_id = get_current_blog_id();
-			// Switch to the original blog.
-			switch_to_blog( $original_blog_id );
-			// Get the post parent slug.
-			$post = get_post( $post_parent );
-			$slug = $post->post_name;
-			// Switch back to destination blog.
-			switch_to_blog( $starting_blog_id );
-			// Look for a post with that slug.
-			$true_post_parent = get_page_by_path( $slug, OBJECT, 'page' );
-			// If a post with that slug exists on this blog, continue.
-			if ( ! empty( $true_post_parent ) ) {
-				// Set its true post parent and a flag to avoid fixing it again.
-				wp_update_post(
-					array(
-						'ID'          => $post_id,
-						'post_parent' => $true_post_parent->ID,
-					)
-				);
-				update_post_meta( $post_id, 'dt_parent_fixed', 1 );
-			}
+	// If this post has a post parent.
+	if ( 0 !== $post_parent ) {
+		// Search for that post parent on this blog.
+		$args = array(
+			'meta_key'       => 'dt_original_post_id',
+			'meta_value'     => $post_parent,
+			'post_type'      => 'page',
+			'posts_per_page' => -1,
+		);
+		$post_query = new WP_Query( $args );
+		// If found, set it as the local post parent.
+		if ( $post_query->have_posts() ) {
+
+			$local_parent = $post_query->posts[0]->ID;
+			wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_parent' => $local_parent,
+				)
+			);
 		}
 	}
 }
 
+function fpp_store_parent( $post_body, $post ) {
+	set_transient( 'temp_original_parent', $post->post_parent, 360 );
+	return $post_body;
+}
 /**
  * Looks through all distributed posts for missing post parents.
  * Then switches to their original site for a post reference, finally
