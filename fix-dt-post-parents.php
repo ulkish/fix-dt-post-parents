@@ -29,12 +29,13 @@
 
 // Adds fix to the Distributor plugin.
 add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 3 );
-// TEST: Trying to get original post meta data.
+// Adds function to store the original post meta ID.
 add_action( 'dt_push_post_args', 'fpp_store_parent', 10, 2 );
 // Adds admin page to the network panel.
 add_action( 'network_admin_menu', 'fpp_create_page' );
 // Adds main function to the network page button.
 add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
+
 
 /**
  * Adds the corresponding post parent to a distributed post
@@ -44,13 +45,9 @@ add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
  * @return void
  */
 function fpp_add_post_parent( $post_id ) {
+	$post_parent      = get_post_meta( $post_id, 'dt_original_post_parent', true );
 
-	$original_blog_id = get_post_meta( $post_id, 'dt_original_blog_id', true );
-	$fixed            = get_post_meta( $post_id, 'dt_parent_fixed', true );
-	$post_parent      = get_transient( 'temp_original_parent' );
-
-	// If this post has a post parent.
-	if ( 0 !== $post_parent ) {
+	if ( ! empty( $post_parent ) ) {
 		// Search for that post parent on this blog.
 		$args = array(
 			'meta_key'       => 'dt_original_post_id',
@@ -61,7 +58,6 @@ function fpp_add_post_parent( $post_id ) {
 		$post_query = new WP_Query( $args );
 		// If found, set it as the local post parent.
 		if ( $post_query->have_posts() ) {
-
 			$local_parent = $post_query->posts[0]->ID;
 			wp_update_post(
 				array(
@@ -72,9 +68,20 @@ function fpp_add_post_parent( $post_id ) {
 		}
 	}
 }
-
+/**
+ * Stores the original post parent before it's broken by Distributor.
+ *
+ * @param array  $post_body The request body to be send.
+ * @param object $post WP_Post being distributed.
+ * @return array $post_body The request body to be send.
+ */
 function fpp_store_parent( $post_body, $post ) {
-	set_transient( 'temp_original_parent', $post->post_parent, 360 );
+
+	$existing_parent = wp_get_post_parent_id( $post_body['ID'] );
+	if ( is_int( $existing_parent ) && 0 !== $existing_parent ) {
+		$post_body['post_parent'] = $existing_parent;
+	}
+
 	return $post_body;
 }
 /**
