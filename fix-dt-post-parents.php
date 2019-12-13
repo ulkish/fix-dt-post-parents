@@ -30,7 +30,7 @@
 // Adds fix to the Distributor plugin.
 add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 3 );
 // Adds function to store the original post meta ID.
-add_action( 'dt_push_post_args', 'fpp_store_parent', 10, 2 );
+add_action( 'dt_push_post_args', 'fpp_store_post_parent', 10, 2 );
 // Adds admin page to the network panel.
 add_action( 'network_admin_menu', 'fpp_create_page' );
 // Adds main function to the network page button.
@@ -52,7 +52,7 @@ function fpp_add_post_parent( $post_id ) {
 		$args = array(
 			'meta_key'       => 'dt_original_post_id',
 			'meta_value'     => $post_parent,
-			'post_type'      => 'page',
+			'post_type'      => 'any',
 			'posts_per_page' => -1,
 		);
 		$post_query = new WP_Query( $args );
@@ -75,10 +75,10 @@ function fpp_add_post_parent( $post_id ) {
  * @param object $post WP_Post being distributed.
  * @return array $post_body The request body to be send.
  */
-function fpp_store_parent( $post_body, $post ) {
+function fpp_store_post_parent( $post_body, $post ) {
 
-	$existing_parent = wp_get_post_parent_id( $post_body['ID'] );
-	if ( is_int( $existing_parent ) && 0 !== $existing_parent ) {
+	if ( isset( $post_body['ID'] ) ) {
+		$existing_parent          = wp_get_post_parent_id( $post_body['ID'] );
 		$post_body['post_parent'] = $existing_parent;
 	}
 
