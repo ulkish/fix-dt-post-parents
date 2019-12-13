@@ -31,25 +31,22 @@
 add_action( 'dt_push_post', 'fpp_add_post_parent', 10, 3 );
 // Adds function to store the original post meta ID.
 add_action( 'dt_push_post_args', 'fpp_store_post_parent', 10, 2 );
-// Adds admin page to the network panel.
-add_action( 'network_admin_menu', 'fpp_create_page' );
-// Adds main function to the network page button.
-add_action( 'admin_post_fpp_fix', 'fpp_fix_all_blogs' );
-
 
 /**
  * Adds the corresponding post parent to a distributed post
  * right after being distributed by the dt_push_post action.
  *
- * @param int $post_id Post ID of the newly created post.
+ * @param int   $post_id The newly created post ID.
+ * @param int   $original_post_id The original post ID.
+ * @param array $args The arguments passed into wp_insert_post.
  * @return void
  */
 function fpp_add_post_parent( $post_id, $original_post_id, $args ) {
 
-	// If 
-	if ( ! isset( $args['remote_post_id'] ) ) {
+	// If this is  a new post and exists, continue.
+	if ( ! empty( $args['remote_post_id'] ) && get_post( $args['remote_post_id'] ) ) {
 
-		$post_parent      = get_post_meta( $post_id, 'dt_original_post_parent', true );
+		$post_parent = get_post_meta( $post_id, 'dt_original_post_parent', true );
 		if ( ! empty( $post_parent ) ) {
 			// Search for that post parent on this blog.
 			$args = array(
@@ -72,6 +69,7 @@ function fpp_add_post_parent( $post_id, $original_post_id, $args ) {
 		}
 	}
 }
+
 /**
  * Stores the original post parent before it's broken by Distributor.
  *
@@ -81,6 +79,7 @@ function fpp_add_post_parent( $post_id, $original_post_id, $args ) {
  */
 function fpp_store_post_parent( $post_body, $post ) {
 
+	// If we're updating a post instead of posting, continue.
 	if ( isset( $post_body['ID'] ) ) {
 		$existing_parent          = wp_get_post_parent_id( $post_body['ID'] );
 		$post_body['post_parent'] = $existing_parent;
