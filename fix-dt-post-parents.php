@@ -43,8 +43,8 @@ add_action( 'dt_push_post_args', 'fpp_store_post_parent', 10, 2 );
  */
 function fpp_add_post_parent( $post_id, $original_post_id, $args ) {
 
-	// If this is  a new post and exists, continue.
-	if ( ! empty( $args['remote_post_id'] ) && get_post( $args['remote_post_id'] ) ) {
+	// If this is a new post, continue.
+	if ( empty( $args['remote_post_id'] ) ) {
 
 		$post_parent = get_post_meta( $post_id, 'dt_original_post_parent', true );
 		if ( ! empty( $post_parent ) ) {
@@ -79,7 +79,7 @@ function fpp_add_post_parent( $post_id, $original_post_id, $args ) {
  */
 function fpp_store_post_parent( $post_body, $post ) {
 
-	// If we're updating a post instead of posting, continue.
+	// If we're updating an existing post instead of pushing a new one, continue.
 	if ( isset( $post_body['ID'] ) ) {
 		$existing_parent          = wp_get_post_parent_id( $post_body['ID'] );
 		$post_body['post_parent'] = $existing_parent;
